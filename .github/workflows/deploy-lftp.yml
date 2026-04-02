@@ -38,7 +38,7 @@ jobs:
         set ftp:list-options -a
         set cmd:fail-exit true
         
-        open ftp://buezu09.ch:Buezu1909$@buezu09.ch
+        open -u buezu09.ch,Buezu1909$ ftp://buezu09.ch
         cd /home/ch64989/web/fc-algro.buezu09.ch/
         
         # Test connection
