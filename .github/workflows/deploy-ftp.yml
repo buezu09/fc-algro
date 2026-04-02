@@ -1,0 +1,91 @@
+name: Deploy via FTP/SFTP
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: ctype, iconv, intl, pdo, pdo_mysql, gd, zip, dom, filter, gd, iconv, json, mbstring, pdo
+        coverage: none
+        
+    - name: Copy .env file
+      run: cp .env .env.local
+      
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      run: |
+        echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+        
+    - name: Cache Composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-composer-
+          
+    - name: Install Composer dependencies
+      run: composer install --no-dev --optimize-autoloader --no-progress --no-interaction
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'yarn'
+        
+    - name: Install Yarn dependencies
+      run: yarn install --frozen-lockfile --production
+      
+    - name: Build assets
+      run: yarn build
+      
+    - name: Clear Symfony cache
+      run: php bin/console cache:clear --env=prod --no-warmup
+      
+    - name: Warmup Symfony cache
+      run: php bin/console cache:warmup --env=prod
+      
+    - name: Create deployment package
+      run: |
+        # Remove unnecessary files
+        rm -rf .git .github node_modules tests .env.dev .env.test
+        rm -f package-lock.json yarn.lock phpunit.dist.xml compose.yaml
+        
+    - name: Upload deployment package
+      uses: actions/upload-artifact@v4
+      with:
+        name: deployment-package
+        path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download deployment package
+      uses: actions/download-artifact@v4
+      with:
+        name: deployment-package
+        
+    - name: Deploy via FTP
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        port: ${{ secrets.FTP_PORT || 21 }}
+        local-dir: '.'
+        server-dir: ${{ secrets.FTP_REMOTE_DIR || '/' }}
+        exclude: 'deployment.tar.gz'
