@@ -1,4 +1,4 @@
-name: Deploy Files Only
+name: Deploy via cURL
 
 on:
   push:
@@ -23,14 +23,11 @@ jobs:
         rm -f webpack.config.js .yarnrc.yml .editorconfig .DS_Store
         rm -rf .idea .docker
         
-    - name: Deploy via FTP
-      uses: SamKirkland/FTP-Deploy-Action@4.3.0
-      with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        port: ${{ secrets.FTP_PORT || 21 }}
-        local-dir: './'
-        server-dir: ${{ secrets.FTP_REMOTE_DIR || '/' }}
-        exclude: '.git,.github,tests,node_modules'
-        security: loose
+    - name: Install ncftp
+      run: sudo apt-get update && sudo apt-get install -y ncftp
+      
+    - name: Deploy via ncftpput
+      run: |
+        ncftpput -R -v -u "${{ secrets.FTP_USERNAME }}" -p "${{ secrets.FTP_PASSWORD }}" \
+        -P ${{ secrets.FTP_PORT || 21 }} \
+        ${{ secrets.FTP_SERVER }} ${{ secrets.FTP_REMOTE_DIR || '/' }} ./*
