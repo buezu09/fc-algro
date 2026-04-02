@@ -27,31 +27,35 @@ jobs:
     - name: Upload files via simple curl
       run: |
         echo "Starting simple FTP upload..."
+        echo "Server: ${{ secrets.FTP_SERVER }}"
+        echo "Port: ${{ secrets.FTP_PORT || 21 }}"
+        echo "Username: ${{ secrets.FTP_USERNAME }}"
+        echo "Remote Dir: ${{ secrets.FTP_REMOTE_DIR }}"
         
-        # Test basic connection
-        echo "Testing connection to ${{ secrets.FTP_SERVER }}..."
+        # Test basic connection and list files
+        echo "Testing connection and listing remote directory..."
         curl -v --connect-timeout 10 \
-          "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}/" \
+          "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR }}" \
           --list-only || echo "Connection test failed"
         
-        # Upload directories first (vendor, public, etc.)
-        for dir in vendor public src config var templates translations assets; do
-          if [ -d "$dir" ]; then
-            echo "Uploading directory: $dir"
-            find "$dir" -type f -exec curl --connect-timeout 30 --max-time 300 -T {} \
-              "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR || '/' }}{}" \
-              --ftp-create-dirs \; || echo "Failed to upload some files in $dir"
-          fi
-        done
+        # List local files to upload
+        echo "Local files to upload:"
+        ls -la
         
-        # Upload single files
+        # Upload single files first
         for file in *; do
           if [ -f "$file" ]; then
-            echo "Uploading: $file"
-            curl --connect-timeout 30 --max-time 300 -T "$file" \
-              "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR || '/' }}$file" \
+            echo "Uploading: $file to ${{ secrets.FTP_REMOTE_DIR }}$file"
+            curl -v --connect-timeout 30 --max-time 300 -T "$file" \
+              "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR }}$file" \
               --ftp-create-dirs || echo "Failed to upload $file"
           fi
         done
         
-        echo "Full upload completed!"
+        # Verify upload by listing remote directory again
+        echo "Verifying upload - listing remote directory:"
+        curl -v --connect-timeout 10 \
+          "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR }}" \
+          --list-only || echo "Cannot list remote directory"
+        
+        echo "Upload completed!"
