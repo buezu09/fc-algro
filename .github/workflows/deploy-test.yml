@@ -1,0 +1,41 @@
+name: Quick Test Deploy
+
+on:
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Create test file
+      run: |
+        echo "Test deployment from GitHub Actions - $(date)" > test-deployment.html
+        
+    - name: Install lftp
+      run: sudo apt-get update && sudo apt-get install -y lftp
+      
+    - name: Upload test file
+      run: |
+        echo "Uploading single test file..."
+        
+        cat > upload.script << EOF
+        set ftp:ssl-allow no
+        set ftp:passive-mode on
+        set net:timeout 30
+        set cmd:fail-exit true
+        
+        open -u buezu09.ch,Buezu1909$ ftp://buezu09.ch
+        cd /home/ch64989/web/fc-algro.buezu09.ch/public_html/
+        
+        put test-deployment.html
+        ls
+        quit
+        EOF
+        
+        lftp -f upload.script
+        
+        echo "Test upload completed!"
