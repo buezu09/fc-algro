@@ -1,0 +1,24 @@
+name: Quick File Upload
+
+on:
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Quick upload test
+      run: |
+        echo "Quick test $(date)" > quick-test.txt
+        
+        echo "Uploading with curl..."
+        curl -v --connect-timeout 30 --max-time 60 \
+          -T quick-test.txt \
+          "ftp://buezu09.ch:Buezu1909%24@buezu09.ch/home/ch64989/web/fc-algro.buezu09.ch/public_html/quick-test.txt" \
+          --ftp-create-dirs || echo "Upload failed"
+        
+        echo "Quick upload completed!"
