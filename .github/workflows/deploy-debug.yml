@@ -25,11 +25,11 @@ jobs:
         # Test with longer timeouts
         echo "Testing with longer timeouts..."
         curl -v --connect-timeout 30 --max-time 60 \
-          "ftp://ch64989:Buezu1909$@buezu09.ch/" \
+          "ftp://buezu09.ch:Buezu1909$@buezu09.ch/" \
           --list-only || echo "TIMEOUT TEST FAILED"
         
         # Test with passive FTP
         echo "Testing with passive FTP..."
         curl -v --connect-timeout 30 --max-time 60 --ftp-pasv \
-          "ftp://ch64989:Buezu1909$@buezu09.ch/" \
+          "ftp://buezu09.ch:Buezu1909$@buezu09.ch/" \
           --list-only || echo "PASV TEST FAILED"
