@@ -25,22 +25,35 @@ jobs:
         
     - name: Upload files via curl
       run: |
+        echo "Starting FTP upload..."
+        echo "Server: ${{ secrets.FTP_SERVER }}"
+        echo "Port: ${{ secrets.FTP_PORT || 21 }}"
+        echo "Username: ${{ secrets.FTP_USERNAME }}"
+        echo "Remote Dir: ${{ secrets.FTP_REMOTE_DIR || '/' }}"
+        
+        # Test connection first
+        echo "Testing FTP connection..."
+        curl -v "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}/" --list-only
+        
         # Create a temporary directory for uploads
         mkdir -p temp_upload
         cp -r * temp_upload/
+        
+        echo "Files to upload:"
+        ls -la temp_upload/
         
         # Upload each file/directory individually
         for item in temp_upload/*; do
           if [ -f "$item" ]; then
             echo "Uploading file: $(basename "$item")"
-            curl -T "$item" \
+            curl -v -T "$item" \
               "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR || '/' }}$(basename "$item")" \
-              --ftp-create-dirs
+              --ftp-create-dirs || echo "Failed to upload $(basename "$item")"
           elif [ -d "$item" ]; then
             echo "Uploading directory: $(basename "$item")"
-            find "$item" -type f -exec curl -T {} \
+            find "$item" -type f -exec curl -v -T {} \
               "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR || '/' }}{}" \
-              --ftp-create-dirs \;
+              --ftp-create-dirs \; || echo "Failed to upload directory $(basename "$item")"
           fi
         done
         
