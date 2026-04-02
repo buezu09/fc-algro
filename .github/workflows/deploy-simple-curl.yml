@@ -22,6 +22,7 @@ jobs:
         rm -f package-lock.json yarn.lock phpunit.dist.xml compose.yaml
         rm -f webpack.config.js .yarnrc.yml .editorconfig .DS_Store
         rm -rf .idea .docker
+        # Keep vendor directory - needed for production
         
     - name: Upload files via simple curl
       run: |
@@ -33,7 +34,17 @@ jobs:
           "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}/" \
           --list-only || echo "Connection test failed"
         
-        # Upload single files first
+        # Upload directories first (vendor, public, etc.)
+        for dir in vendor public src config var templates translations assets; do
+          if [ -d "$dir" ]; then
+            echo "Uploading directory: $dir"
+            find "$dir" -type f -exec curl --connect-timeout 30 --max-time 300 -T {} \
+              "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR || '/' }}{}" \
+              --ftp-create-dirs \; || echo "Failed to upload some files in $dir"
+          fi
+        done
+        
+        # Upload single files
         for file in *; do
           if [ -f "$file" ]; then
             echo "Uploading: $file"
@@ -43,4 +54,4 @@ jobs:
           fi
         done
         
-        echo "Basic file upload completed!"
+        echo "Full upload completed!"
