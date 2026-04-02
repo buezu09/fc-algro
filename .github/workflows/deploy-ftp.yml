@@ -46,13 +46,20 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'yarn'
         
     - name: Enable Corepack and setup Yarn
       run: |
-        corepack enable
-        corepack prepare yarn@4.9.4 --activate
+        sudo corepack enable
+        sudo corepack prepare yarn@4.9.4 --activate
         yarn --version
+        
+    - name: Cache Yarn dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/yarn
+        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
         
     - name: Install Yarn dependencies
       run: yarn install --frozen-lockfile --production || echo "Yarn install failed"
