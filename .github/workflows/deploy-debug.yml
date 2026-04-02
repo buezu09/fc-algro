@@ -18,15 +18,15 @@ jobs:
       run: |
         echo "=== FTP DEBUG INFO ==="
         echo "Server: ${{ secrets.FTP_SERVER }}"
-        echo "Port: ${{ secrets.FTP_PORT || 21 }}"
         echo "Username: ${{ secrets.FTP_USERNAME }}"
         echo "Remote Dir: ${{ secrets.FTP_REMOTE_DIR }}"
+        echo "Port Secret: '${{ secrets.FTP_PORT }}'"
         echo "===================="
         
-        # Test connection
-        echo "Testing FTP connection..."
-        curl -v "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR }}" \
-          --list-only || echo "CONNECTION FAILED"
+        # Test connection with hardcoded port 21
+        echo "Testing FTP connection with port 21..."
+        curl -v "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:21${{ secrets.FTP_REMOTE_DIR }}" \
+          --list-only || echo "CONNECTION FAILED with port 21"
         
         echo "Local files:"
         ls -la
@@ -34,11 +34,11 @@ jobs:
         # Create test file
         echo "test deployment $(date)" > test-deployment.txt
         
-        echo "Uploading test file..."
+        echo "Uploading test file with port 21..."
         curl -v -T test-deployment.txt \
-          "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR }}test-deployment.txt" \
-          --ftp-create-dirs || echo "UPLOAD FAILED"
+          "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:21${{ secrets.FTP_REMOTE_DIR }}test-deployment.txt" \
+          --ftp-create-dirs || echo "UPLOAD FAILED with port 21"
         
-        echo "Verifying test file..."
-        curl -v "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR }}" \
-          --list-only || echo "VERIFICATION FAILED"
+        echo "Verifying test file with port 21..."
+        curl -v "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:21${{ secrets.FTP_REMOTE_DIR }}" \
+          --list-only || echo "VERIFICATION FAILED with port 21"
