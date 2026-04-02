@@ -9,11 +9,11 @@ env:
 jobs:
   debug:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Test FTP Connection
       run: |
         echo "=== FTP DEBUG INFO ==="
@@ -21,8 +21,15 @@ jobs:
         echo "Username: ${{ secrets.FTP_USERNAME }}"
         echo "Remote Dir: '${{ secrets.FTP_REMOTE_DIR }}'"
         echo "===================="
+
+        # Test with longer timeouts
+        echo "Testing with longer timeouts..."
+        curl -v --connect-timeout 30 --max-time 60 \
+          "ftp://ch64989:Buezu1909$@buezu09.ch/" \
+          --list-only || echo "TIMEOUT TEST FAILED"
         
-        # Test with completely hardcoded values
-        echo "Testing with hardcoded values..."
-        curl -v "ftp://ch64989:password@buezu09.ch/" \
-          --list-only || echo "HARDCODED FAILED"
+        # Test with passive FTP
+        echo "Testing with passive FTP..."
+        curl -v --connect-timeout 30 --max-time 60 --ftp-pasv \
+          "ftp://ch64989:Buezu1909$@buezu09.ch/" \
+          --list-only || echo "PASV TEST FAILED"
