@@ -1,0 +1,47 @@
+name: Deploy Basic FTP
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Remove development files
+      run: |
+        rm -rf .git .github tests
+        rm -f package-lock.json yarn.lock phpunit.dist.xml compose.yaml
+        rm -f webpack.config.js .yarnrc.yml .editorconfig .DS_Store
+        rm -rf .idea .docker
+        
+    - name: Upload files via curl
+      run: |
+        # Create a temporary directory for uploads
+        mkdir -p temp_upload
+        cp -r * temp_upload/
+        
+        # Upload each file/directory individually
+        for item in temp_upload/*; do
+          if [ -f "$item" ]; then
+            echo "Uploading file: $(basename "$item")"
+            curl -T "$item" \
+              "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR || '/' }}$(basename "$item")" \
+              --ftp-create-dirs
+          elif [ -d "$item" ]; then
+            echo "Uploading directory: $(basename "$item")"
+            find "$item" -type f -exec curl -T {} \
+              "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR || '/' }}{}" \
+              --ftp-create-dirs \;
+          fi
+        done
+        
+        echo "Upload completed!"
