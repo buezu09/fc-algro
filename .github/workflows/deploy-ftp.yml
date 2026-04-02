@@ -29,7 +29,7 @@ jobs:
         echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
         
     - name: Cache Composer dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ steps.composer-cache.outputs.dir }}
         key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -42,7 +42,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'yarn'
         
     - name: Install Yarn dependencies
@@ -88,4 +88,4 @@ jobs:
         port: ${{ secrets.FTP_PORT || 21 }}
         local-dir: '.'
         server-dir: ${{ secrets.FTP_REMOTE_DIR || '/' }}
-        exclude: 'deployment.tar.gz'
+        exclude: ''
