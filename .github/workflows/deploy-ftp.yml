@@ -48,9 +48,12 @@ jobs:
         node-version: '20'
         cache: 'yarn'
         
-    - name: Check Node.js version
-      run: node --version && npm --version
-      
+    - name: Enable Corepack and setup Yarn
+      run: |
+        corepack enable
+        corepack prepare yarn@4.9.4 --activate
+        yarn --version
+        
     - name: Install Yarn dependencies
       run: yarn install --frozen-lockfile --production || echo "Yarn install failed"
       
