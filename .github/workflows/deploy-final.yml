@@ -1,0 +1,48 @@
+name: Final Deploy Test
+
+on:
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Remove development files
+      run: |
+        rm -rf .git .github tests
+        rm -f package-lock.json yarn.lock phpunit.dist.xml compose.yaml
+        rm -f webpack.config.js .yarnrc.yml .editorconfig .DS_Store
+        rm -rf .idea .docker
+        
+    - name: Upload files
+      run: |
+        echo "Starting final deployment test..."
+        
+        # Upload single files first
+        for file in *; do
+          if [ -f "$file" ]; then
+            echo "Uploading: $file"
+            curl -v --connect-timeout 30 --max-time 60 --ftp-pasv -T "$file" \
+              "ftp://buezu09.ch:Buezu1909$@buezu09.ch/home/ch64989/web/fc-algro.buezu09.ch/$file" \
+              --ftp-create-dirs || echo "Failed to upload $file"
+          fi
+        done
+        
+        # Upload directories
+        for dir in vendor public src config var templates translations assets; do
+          if [ -d "$dir" ]; then
+            echo "Uploading directory: $dir"
+            find "$dir" -type f -exec curl -v --connect-timeout 30 --max-time 60 --ftp-pasv -T {} \
+              "ftp://buezu09.ch:Buezu1909$@buezu09.ch/home/ch64989/web/fc-algro.buezu09.ch/{}" \
+              --ftp-create-dirs \; || echo "Failed to upload some files in $dir"
+          fi
+        done
+        
+        echo "Final deployment completed!"
