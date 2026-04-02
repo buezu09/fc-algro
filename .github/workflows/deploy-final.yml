@@ -30,7 +30,7 @@ jobs:
           if [ -f "$file" ]; then
             echo "Uploading: $file"
             curl -v --connect-timeout 30 --max-time 60 --ftp-pasv -T "$file" \
-              "ftp://buezu09.ch:Buezu1909$@buezu09.ch/home/ch64989/web/fc-algro.buezu09.ch/$file" \
+              "ftp://buezu09.ch:Buezu1909%24@buezu09.ch/home/ch64989/web/fc-algro.buezu09.ch/$file" \
               --ftp-create-dirs || echo "Failed to upload $file"
           fi
         done
@@ -40,7 +40,7 @@ jobs:
           if [ -d "$dir" ]; then
             echo "Uploading directory: $dir"
             find "$dir" -type f -exec curl -v --connect-timeout 30 --max-time 60 --ftp-pasv -T {} \
-              "ftp://buezu09.ch:Buezu1909$@buezu09.ch/home/ch64989/web/fc-algro.buezu09.ch/{}" \
+              "ftp://buezu09.ch:Buezu1909%24@buezu09.ch/home/ch64989/web/fc-algro.buezu09.ch/{}" \
               --ftp-create-dirs \; || echo "Failed to upload some files in $dir"
           fi
         done
