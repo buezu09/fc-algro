@@ -32,15 +32,20 @@ jobs:
         cat > upload.script << EOF
         set ftp:ssl-allow no
         set ftp:passive-mode on
-        set net:timeout 30
-        set net:reconnect-interval-base 5
+        set net:timeout 60
+        set net:reconnect-interval-base 10
         set net:reconnect-interval-multiplier 1
+        set ftp:list-options -a
+        set cmd:fail-exit true
         
         open ftp://buezu09.ch:Buezu1909$@buezu09.ch
         cd /home/ch64989/web/fc-algro.buezu09.ch/
         
+        # Test connection
+        ls
+        
         # Upload all files and directories
-        mirror -R --delete --parallel=3 --verbose ./ ./
+        mirror -R --delete --parallel=2 --verbose --ignore-time --no-perms ./ ./
         
         quit
         EOF
