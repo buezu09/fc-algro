@@ -1,0 +1,46 @@
+name: Deploy Simple Curl
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Remove development files
+      run: |
+        rm -rf .git .github tests
+        rm -f package-lock.json yarn.lock phpunit.dist.xml compose.yaml
+        rm -f webpack.config.js .yarnrc.yml .editorconfig .DS_Store
+        rm -rf .idea .docker
+        
+    - name: Upload files via simple curl
+      run: |
+        echo "Starting simple FTP upload..."
+        
+        # Test basic connection
+        echo "Testing connection to ${{ secrets.FTP_SERVER }}..."
+        curl -v --connect-timeout 10 \
+          "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}/" \
+          --list-only || echo "Connection test failed"
+        
+        # Upload single files first
+        for file in *; do
+          if [ -f "$file" ]; then
+            echo "Uploading: $file"
+            curl --connect-timeout 30 --max-time 300 -T "$file" \
+              "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR || '/' }}$file" \
+              --ftp-create-dirs || echo "Failed to upload $file"
+          fi
+        done
+        
+        echo "Basic file upload completed!"
