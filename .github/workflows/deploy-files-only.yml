@@ -5,6 +5,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -27,6 +30,6 @@ jobs:
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
         port: ${{ secrets.FTP_PORT || 21 }}
-        local-dir: '.'
+        local-dir: './'
         server-dir: ${{ secrets.FTP_REMOTE_DIR || '/' }}
         exclude: '.git,.github,tests,node_modules'
