@@ -1,0 +1,51 @@
+name: Deploy with LFTP
+
+on:
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Remove development files
+      run: |
+        rm -rf .git .github tests
+        rm -f package-lock.json yarn.lock phpunit.dist.xml compose.yaml
+        rm -f webpack.config.js .yarnrc.yml .editorconfig .DS_Store
+        rm -rf .idea .docker
+        
+    - name: Install lftp
+      run: sudo apt-get update && sudo apt-get install -y lftp
+      
+    - name: Upload with lftp
+      run: |
+        echo "Starting lftp deployment..."
+        
+        # Create lftp script
+        cat > upload.script << EOF
+        set ftp:ssl-allow no
+        set ftp:passive-mode on
+        set net:timeout 30
+        set net:reconnect-interval-base 5
+        set net:reconnect-interval-multiplier 1
+        
+        open ftp://buezu09.ch:Buezu1909$@buezu09.ch
+        cd /home/ch64989/web/fc-algro.buezu09.ch/
+        
+        # Upload all files and directories
+        mirror -R --delete --parallel=3 --verbose ./ ./
+        
+        quit
+        EOF
+        
+        # Execute lftp script
+        lftp -f upload.script
+        
+        echo "LFTP deployment completed!"
