@@ -22,22 +22,7 @@ jobs:
         echo "Remote Dir: '${{ secrets.FTP_REMOTE_DIR }}'"
         echo "===================="
         
-        # Test with correct server hardcoded
-        echo "Testing with buezu09.ch..."
-        curl -v "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@buezu09.ch/" \
-          --list-only || echo "CONNECTION FAILED"
-        
-        echo "Local files:"
-        ls -la
-        
-        # Create test file
-        echo "test deployment $(date)" > test-deployment.txt
-        
-        echo "Uploading test file..."
-        curl -v -T test-deployment.txt \
-          "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@buezu09.ch/test-deployment.txt" \
-          --ftp-create-dirs || echo "UPLOAD FAILED"
-        
-        echo "Verifying test file..."
-        curl -v "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@buezu09.ch/" \
-          --list-only || echo "VERIFICATION FAILED"
+        # Test with completely hardcoded values
+        echo "Testing with hardcoded values..."
+        curl -v "ftp://ch64989:password@buezu09.ch/" \
+          --list-only || echo "HARDCODED FAILED"
