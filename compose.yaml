@@ -1,0 +1,15 @@
+services:
+    php:
+        build:
+            context: .
+            dockerfile: ./.docker/apache/Dockerfile
+        container_name: fc-algro
+        ports:
+            - "8080:80"
+        volumes:
+            - ~/PhpstormProjects/website:/var/www/symfony
+            - ./.docker/apache/vhost.conf:/etc/apache2/sites-enabled/000-default.conf
+        environment:
+            APP_ENV: dev
+            APP_DEBUG: 1
+            COMPOSER_ALLOW_SUPERUSER: 1
