@@ -1,4 +1,4 @@
-name: Deploy Files Only
+name: Deploy via SFTP
 
 on:
   push:
@@ -23,15 +23,12 @@ jobs:
         rm -f webpack.config.js .yarnrc.yml .editorconfig .DS_Store
         rm -rf .idea .docker
         
-    - name: Deploy via FTP
-      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+    - name: Deploy via SFTP
+      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
       with:
-        server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        port: ${{ secrets.FTP_PORT || 21 }}
-        local-dir: './'
-        server-dir: ${{ secrets.FTP_REMOTE_DIR || '/' }}
-        exclude: '.git,.github,tests,node_modules'
-        timeout: 300000
-        security: loose
+        server: ${{ secrets.FTP_SERVER }}
+        ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+        local_path: './'
+        remote_path: ${{ secrets.FTP_REMOTE_DIR || '/' }}
+        sftpArgs: '-o ConnectTimeout=30 -o StrictHostKeyChecking=no'
