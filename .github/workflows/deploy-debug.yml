@@ -1,0 +1,44 @@
+name: Deploy Debug Test
+
+on:
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Test FTP Connection
+      run: |
+        echo "=== FTP DEBUG INFO ==="
+        echo "Server: ${{ secrets.FTP_SERVER }}"
+        echo "Port: ${{ secrets.FTP_PORT || 21 }}"
+        echo "Username: ${{ secrets.FTP_USERNAME }}"
+        echo "Remote Dir: ${{ secrets.FTP_REMOTE_DIR }}"
+        echo "===================="
+        
+        # Test connection
+        echo "Testing FTP connection..."
+        curl -v "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR }}" \
+          --list-only || echo "CONNECTION FAILED"
+        
+        echo "Local files:"
+        ls -la
+        
+        # Create test file
+        echo "test deployment $(date)" > test-deployment.txt
+        
+        echo "Uploading test file..."
+        curl -v -T test-deployment.txt \
+          "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR }}test-deployment.txt" \
+          --ftp-create-dirs || echo "UPLOAD FAILED"
+        
+        echo "Verifying test file..."
+        curl -v "ftp://${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}@${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT || 21 }}${{ secrets.FTP_REMOTE_DIR }}" \
+          --list-only || echo "VERIFICATION FAILED"
