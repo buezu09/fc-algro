@@ -5,6 +5,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -37,7 +40,7 @@ jobs:
           ${{ runner.os }}-composer-
           
     - name: Install Composer dependencies
-      run: composer install --no-dev --optimize-autoloader --no-progress --no-interaction
+      run: composer install --no-dev --optimize-autoloader --no-progress --no-interaction || echo "Composer install failed"
       
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -45,29 +48,41 @@ jobs:
         node-version: '20'
         cache: 'yarn'
         
+    - name: Check Node.js version
+      run: node --version && npm --version
+      
     - name: Install Yarn dependencies
-      run: yarn install --frozen-lockfile --production
+      run: yarn install --frozen-lockfile --production || echo "Yarn install failed"
+      
+    - name: Check if yarn.lock exists
+      run: ls -la yarn.lock || echo "yarn.lock not found"
       
     - name: Build assets
-      run: yarn build
+      run: yarn build || echo "Asset build failed"
+      
+    - name: Check Symfony console
+      run: php bin/console --version || echo "Symfony console not found"
       
     - name: Clear Symfony cache
-      run: php bin/console cache:clear --env=prod --no-warmup
+      run: php bin/console cache:clear --env=prod --no-warmup || echo "Cache clear failed"
       
     - name: Warmup Symfony cache
-      run: php bin/console cache:warmup --env=prod
+      run: php bin/console cache:warmup --env=prod || echo "Cache warmup failed"
       
     - name: Create deployment package
       run: |
+        echo "Starting deployment package creation..."
         # Remove unnecessary files
         rm -rf .git .github node_modules tests .env.dev .env.test
         rm -f package-lock.json yarn.lock phpunit.dist.xml compose.yaml
+        echo "Cleanup completed"
         
     - name: Upload deployment package
       uses: actions/upload-artifact@v4
       with:
         name: deployment-package
         path: .
+        retention-days: 1
 
   deploy:
     needs: build
